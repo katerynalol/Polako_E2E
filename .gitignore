@@ -1,0 +1,25 @@
+# Playwright spezifisch
+test-results/
+playwright-report/
+blob-report/
+playwright/.local-browsers/
+trace.zip
+
+# Python Umgebung & Artefakte
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.env
+
+# IDEs
+.idea/
+.vscode/
+
+# Logs & OS
+*.log
+.DS_Store
+Thumbs.db
