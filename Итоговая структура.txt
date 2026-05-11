@@ -1,0 +1,29 @@
+polako_project/
+├── conftest.py
+├── pytest.ini
+├── README.md
+└── my_team/
+    ├── data/
+    │   ├── __init__.py
+    │   └── constants.py
+    ├── utils/
+    │   ├── __init__.py
+    │   └── common_actions.py
+    ├── pages/
+    │   ├── __init__.py          ← class Pages (единый импорт)
+    │   ├── base_page.py
+    │   ├── auth_page.py
+    │   ├── personal_info_page.py
+    │   ├── purchases_page.py
+    │   ├── events_page.py
+    │   ├── events_create_page.py  ← наследует EventsPage
+    │   ├── events_edit_page.py    ← наследует EventsCreatePage
+    │   └── tickets_page.py
+    └── tests/
+        ├── test_auth.py
+        ├── test_personal_info.py
+        ├── test_purchases.py
+        ├── test_events.py
+        ├── test_events_create.py
+        ├── test_events_edit.py
+        └── test_tickets.py

@@ -1,4 +1,7 @@
-# Фикстуры
+import pytest
+from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
+from bughunters.data.constants import MANAGER_USER, TIMEOUTS, URLS
+from bughunters.pages import Pages
 
 import pytest
 from playwright.sync_api import sync_playwright
