@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from playwright.sync_api import Page
-from .base_page import BasePage
+
 from bughunters.data.constants import URLS
+from .base_page import BasePage
 
 
 class PersonalInfoPage(BasePage):
@@ -35,7 +37,13 @@ class PersonalInfoPage(BasePage):
         self.click(self._SAVE_BTN)
 
     def is_saved(self) -> bool:
-        return self.page.locator(self._SUCCESS_TOAST).is_visible(timeout=5_000)
+        try:
+            # Ждем появления зеленого уведомления на экране до 7 секунд
+            self.page.wait_for_selector(self._SUCCESS_TOAST, state="visible", timeout=7_000)
+            return True
+        except Exception:
+            # Если уведомление не успело появиться, возвращаем False
+            return False
 
     def is_save_button_disabled(self) -> bool:
         return self.page.locator(self._SAVE_DISABLED).is_visible()
@@ -47,3 +55,11 @@ class PersonalInfoPage(BasePage):
 
     def logout(self) -> None:
         self.click(self._LOGOUT_BTN)
+
+    def check_user_is_authorized(self) -> bool:
+        try:
+            # Если открылось поле ввода Имени, значит мы точно залогинены и в ЛК!
+            self.page.wait_for_selector(self._FIRST_NAME, state="visible", timeout=10_000)
+            return True
+        except Exception:
+            return False
