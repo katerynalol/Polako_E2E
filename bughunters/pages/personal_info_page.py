@@ -1,7 +1,9 @@
 from __future__ import annotations
+
 from playwright.sync_api import Page
+
+from bughunters.data.constants import URLS
 from .base_page import BasePage
-from bughunters.data.constants import URLS, TIMEOUTS
 
 
 class PersonalInfoPage(BasePage):
@@ -45,19 +47,14 @@ class PersonalInfoPage(BasePage):
     def get_email(self) -> str:
         return self.page.locator(self._EMAIL).input_value()
 
-    def update_profile(self, first_name: str = None, last_name: str = None,
-                       phone: str = None, instagram: str = None, telegram: str = None) -> None:
-        if first_name is not None:
-            self.fill(self._FIRST_NAME, first_name)
-        if last_name is not None:
-            self.fill(self._LAST_NAME, last_name)
-        if phone is not None:
-            self.fill(self._PHONE, phone)
-        if instagram is not None:
-            self.fill(self._INSTAGRAM, instagram)
-        if telegram is not None:
-            self.fill(self._TELEGRAM, telegram)
-        self.page.locator("button[type='submit']").first.click()
+    def is_saved(self) -> bool:
+        try:
+            # Ждем появления зеленого уведомления на экране до 7 секунд
+            self.page.wait_for_selector(self._SUCCESS_TOAST, state="visible", timeout=7_000)
+            return True
+        except Exception:
+            # Если уведомление не успело появиться, возвращаем False
+            return False
 
     def is_saved(self, timeout: int = 5_000) -> bool:
         """Returns True if a success toast/notification appears after save."""
@@ -75,5 +72,13 @@ class PersonalInfoPage(BasePage):
     def navigate_to_purchases(self) -> None:
         self.click(self._NAV_PURCHASES)
 
-    def navigate_to_balance(self) -> None:
-        self.click(self._NAV_BALANCE)
+    def logout(self) -> None:
+        self.click(self._LOGOUT_BTN)
+
+    def check_user_is_authorized(self) -> bool:
+        try:
+            # Если открылось поле ввода Имени, значит мы точно залогинены и в ЛК!
+            self.page.wait_for_selector(self._FIRST_NAME, state="visible", timeout=10_000)
+            return True
+        except Exception:
+            return False
