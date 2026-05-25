@@ -1,9 +1,7 @@
 from __future__ import annotations
-
 from playwright.sync_api import Page
-
-from bughunters.data.constants import URLS
 from .base_page import BasePage
+from bughunters.data.constants import URLS
 
 
 class PersonalInfoPage(BasePage):
@@ -48,13 +46,7 @@ class PersonalInfoPage(BasePage):
         return self.page.locator(self._EMAIL).input_value()
 
     def is_saved(self) -> bool:
-        try:
-            # Ждем появления зеленого уведомления на экране до 7 секунд
-            self.page.wait_for_selector(self._SUCCESS_TOAST, state="visible", timeout=7_000)
-            return True
-        except Exception:
-            # Если уведомление не успело появиться, возвращаем False
-            return False
+        return self.page.locator(self._SUCCESS_TOAST).is_visible(timeout=5_000)
 
     def is_saved(self, timeout: int = 5_000) -> bool:
         """Returns True if a success toast/notification appears after save."""
