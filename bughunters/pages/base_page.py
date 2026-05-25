@@ -39,22 +39,27 @@ class BasePage:
     def expect_url_contains(self, fragment: str) -> None:
         expect(self.page).to_have_url(f"**{fragment}**")
 
-    # ── Header helpers (available on any page) ────────────────────────────
+    # ── Header helpers ────────────────────────────────────────────────────
+
     def click_login_button(self) -> None:
-        self.page.locator("button:has-text('Войти'), button:has-text('Login')").first.click()
+        # Unique class on the header login button — language-independent
+        self.page.locator("button.ml-4").first.click()
 
     def click_profile_button(self) -> None:
-        self.page.locator("button:has-text('Профиль'), a:has-text('Профиль')").first.click()
+        # After login the header shows a link to /user with avatar initial + "Profile"
+        self.page.locator("a[href*='/user']").first.click()
 
     def is_logged_in(self, timeout: int = 10_000) -> bool:
         try:
-            self.page.locator(
-                "button:has-text('Профиль'), a:has-text('Профиль')"
-            ).wait_for(state="visible", timeout=timeout)
+            # Profile link appears in header only when authenticated
+            self.page.locator("a[href*='/user']").first.wait_for(state="visible", timeout=timeout)
             return True
         except Exception:
             return False
 
     def logout(self) -> None:
-        self.click_profile_button()
-        self.page.locator("button:has-text('Выйти'), a:has-text('Выйти')").click()
+        # Sidebar logout button — data-slot="button" + unique position
+        self.page.locator("a[href*='/user']").first.click()
+        self.page.wait_for_timeout(1000)
+        # Logout button is the only button with group/button class that is NOT type=submit
+        self.page.locator("button[type='button'][class*='group/button']").last.click()
