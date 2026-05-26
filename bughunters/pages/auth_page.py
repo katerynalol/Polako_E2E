@@ -6,7 +6,7 @@ from bughunters.data.constants import URLS, TIMEOUTS
 
 class AuthPage(BasePage):
     # ── Login modal ───────────────────────────────────────────────────────
-    # Header "Войти" button — unique class ml-4 in header, language-independent
+    # Header "Login" button — unique class ml-4 in header, language-independent
     _LOGIN_HEADER_BTN = "button.ml-4"
 
     _EMAIL    = "input[name='email']"
@@ -19,7 +19,7 @@ class AuthPage(BasePage):
     _ERROR    = "[role='alert'], [class*='error'], [class*='Error']"
 
     # ── Registration flow ─────────────────────────────────────────────────
-    # "У вас нет аккаунта?" — unique class, no text dependency needed
+    # "Don't have an account?" — unique class, no text dependency needed
     _REGISTER_LINK   = "button.underline"
 
     # Role-selection buttons: positional — first = user, second = manager

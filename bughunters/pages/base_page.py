@@ -7,7 +7,6 @@ class BasePage:
     def __init__(self, page: Page) -> None:
         self.page = page
         self._timeout = TIMEOUTS["element"]
-        # Выносим общие элементы хедера, чтобы не хардкодить их в методах
         self._header_user_link = "a[href*='/user']"
         self._header_login_btn = "button.ml-4"
 
@@ -15,7 +14,7 @@ class BasePage:
         self.page.goto(url, timeout=TIMEOUTS["navigation"])
 
     @property
-    def current_url(self) -> str:  # Сделали проперти (более Pythonic)
+    def current_url(self) -> str:
         return self.page.url
 
     def locator(self, selector: str) -> Locator:
