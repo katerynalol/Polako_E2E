@@ -17,7 +17,7 @@ class PersonalInfoPage(BasePage):
 
     _SAVE_BTN = "button[type='submit'][data-slot='button']"
     _CHANGE_PWD_BTN = "button[type='submit'][data-slot='button']"
-    _LOGOUT_BTN = "button.text-red-500, button:has-text('Выйти')"  # Сделали более гибким
+    _LOGOUT_BTN = "button.text-red-500, button:has-text('Выйти')"
 
     _NAV_PERSONAL_INFO = "a[href*='/user/personal-information']"
     _NAV_PURCHASES = "a[href*='/user/purchases']"
