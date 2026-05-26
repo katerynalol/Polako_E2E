@@ -103,9 +103,10 @@ def _ui_login(page: Page) -> None:
     Language-independent: structural selectors only.
     """
     page.goto(URLS["home"], timeout=TIMEOUTS["navigation"])
-    page.wait_for_timeout(1500)
-    page.locator("button.ml-4").click()
-    page.wait_for_timeout(1000)
+
+    login_btn = page.locator("button.ml-4")
+    login_btn.click()
+
     page.locator("input[name='email']").fill(MANAGER_USER["email"])
     page.locator("input[name='password']").fill(MANAGER_USER["password"])
     page.locator("button[type='submit'].btn-accent").click()

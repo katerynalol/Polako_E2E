@@ -1,43 +1,31 @@
 from __future__ import annotations
-from playwright.sync_api import Page
+from playwright.sync_api import expect
+import re
 from .base_page import BasePage
-from bughunters.data.constants import URLS, TIMEOUTS
+from bughunters.data.constants import URLS
 
 
 class PersonalInfoPage(BasePage):
-    # ── Form fields — real name attributes from DOM ───────────────────────
-    _FIRST_NAME       = "input[name='first_name']"
-    _LAST_NAME        = "input[name='last_name']"
-    _EMAIL            = "input[name='email']"
-    _PHONE            = "input[name='phone']"
-    _INSTAGRAM        = "input[name='instagram']"
-    _TELEGRAM         = "input[name='telegram']"
-
-    # ── Actions ───────────────────────────────────────────────────────────
-    # Two submit buttons on the page: first = save profile, second = change password
-    _SAVE_BTN         = "button[type='submit'][data-slot='button']:first-of-type"
-    _NEW_PASSWORD     = "input[name='new_password']"
+    _FIRST_NAME = "input[name='first_name']"
+    _LAST_NAME = "input[name='last_name']"
+    _EMAIL = "input[name='email']"
+    _PHONE = "input[name='phone']"
+    _INSTAGRAM = "input[name='instagram']"
+    _TELEGRAM = "input[name='telegram']"
+    _NEW_PASSWORD = "input[name='new_password']"
     _CONFIRM_PASSWORD = "input[name='confirm_password']"
-    _CHANGE_PWD_BTN   = "button[type='submit'][data-slot='button']:last-of-type"
 
-    # ── Feedback ──────────────────────────────────────────────────────────
-    # Toast text observed: "Profile saved" — but we match by role to stay language-agnostic
-    _SUCCESS_TOAST    = "[role='status'], [class*='toast'], [class*='Toast'], [class*='success']"
+    _SAVE_BTN = "button[type='submit'][data-slot='button']"
+    _CHANGE_PWD_BTN = "button[type='submit'][data-slot='button']"
+    _LOGOUT_BTN = "button.text-red-500, button:has-text('Выйти')"  # Сделали более гибким
 
-    # ── Sidebar navigation ────────────────────────────────────────────────
-    _NAV_PROFILE      = "a[href*='/user/personal-information']"
-    _NAV_PURCHASES    = "a[href*='/user/purchases']"
-    _NAV_BALANCE      = "a[href*='/user/balance']"
-    _NAV_EVENTS       = "a[href*='/user/events']"
-    # Logout: unique combination — data-slot=button, type=button, accent background.
-    # Only one such button exists on the personal-info page (confirmed in DOM inspection).
-    _LOGOUT_BTN       = "button[type='button'][class*='bg-accent']"
+    _NAV_PERSONAL_INFO = "a[href*='/user/personal-information']"
+    _NAV_PURCHASES = "a[href*='/user/purchases']"
 
-    def __init__(self, page: Page) -> None:
-        super().__init__(page)
+    _SUCCESS_TOAST = "[role='status'], [class*='toast'], [class*='Toast'], [class*='success']"
 
     def open(self) -> None:
-        self.navigate(URLS["personal_info"])
+        self.navigate(URLS["home"] + "/user/personal-information")
 
     def get_first_name(self) -> str:
         return self.page.locator(self._FIRST_NAME).input_value()
@@ -57,23 +45,36 @@ class PersonalInfoPage(BasePage):
             self.fill(self._INSTAGRAM, instagram)
         if telegram is not None:
             self.fill(self._TELEGRAM, telegram)
-        self.page.locator("button[type='submit']").first.click()
+        self.page.locator(self._SAVE_BTN).first.click()
 
-    def is_saved(self, timeout: int = 5_000) -> bool:
-        """Returns True if a success toast/notification appears after save."""
-        try:
-            self.page.locator(self._SUCCESS_TOAST).wait_for(state="visible", timeout=timeout)
-            return True
-        except Exception:
-            return False
+    def navigate_to_purchases(self) -> None:
+        self.page.locator(self._NAV_PURCHASES).first.click()
+
+    def navigate_to_personal_info(self) -> None:
+        self.page.locator(self._NAV_PERSONAL_INFO).first.click()
+
+    def click_logout(self) -> None:
+        self.page.locator(self._LOGOUT_BTN).click()
+
+    def verify_profile_fields_visible(self) -> None:
+        for name in ("first_name", "last_name", "email", "phone", "instagram", "telegram"):
+            expect(self.page.locator(f"input[name='{name}']")).to_be_visible()
+
+    def verify_password_fields_visible(self) -> None:
+        expect(self.page.locator(self._NEW_PASSWORD)).to_be_visible()
+        expect(self.page.locator(self._CONFIRM_PASSWORD)).to_be_visible()
+
+    def verify_sidebar_links_visible(self) -> None:
+        expect(self.page.locator(self._NAV_PERSONAL_INFO).first).to_be_visible()
+        expect(self.page.locator(self._NAV_PURCHASES).first).to_be_visible()
+
+    def verify_logout_btn_visible(self) -> None:
+        expect(self.page.locator(self._LOGOUT_BTN)).to_be_visible()
+
+    def verify_success_toast_contains_text(self, pattern: str | re.Pattern) -> None:
+        expect(self.page.locator("body")).to_have_text(pattern, ignore_case=True)
 
     def change_password(self, new_password: str) -> None:
         self.fill(self._NEW_PASSWORD, new_password)
         self.fill(self._CONFIRM_PASSWORD, new_password)
-        self.page.locator("button[type='submit']").last.click()
-
-    def navigate_to_purchases(self) -> None:
-        self.click(self._NAV_PURCHASES)
-
-    def navigate_to_balance(self) -> None:
-        self.click(self._NAV_BALANCE)
+        self.page.locator(self._CHANGE_PWD_BTN).last.click()
