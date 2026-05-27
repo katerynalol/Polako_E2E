@@ -25,12 +25,13 @@ class PersonalInfoPage(BasePage):
     _SUCCESS_TOAST    = "[role='status'], [class*='toast'], [class*='Toast'], [class*='success']"
 
     # ── Sidebar navigation ────────────────────────────────────────────────
-    _NAV_PURCHASES    = "a[href$='/user/purchases']"
-    _NAV_BALANCE      = "a[href*='/user/balance']"
-    _NAV_EVENTS       = "a[href*='/user/events']"
+    _NAV_PERSONAL_INFO = "a[href*='/user/personal-information']"
+    _NAV_PURCHASES     = "a[href*='/user/purchases']"
+    _NAV_BALANCE       = "a[href*='/user/balance']"
+    _NAV_EVENTS        = "a[href*='/user/events']"
     # Logout: unique combination — data-slot=button, type=button, accent background.
     # Only one such button exists on the personal-info page (confirmed in DOM inspection).
-    _LOGOUT_BTN       = "button[type='button'][class*='bg-accent']"
+    _LOGOUT_BTN        = "button[type='button'][class*='bg-accent']"
 
     def __init__(self, page: Page) -> None:
         super().__init__(page)
