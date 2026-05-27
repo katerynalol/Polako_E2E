@@ -25,8 +25,7 @@ class PersonalInfoPage(BasePage):
     _SUCCESS_TOAST    = "[role='status'], [class*='toast'], [class*='Toast'], [class*='success']"
 
     # ── Sidebar navigation ────────────────────────────────────────────────
-    _NAV_PROFILE      = "a[href*='/user/personal-information']"
-    _NAV_PURCHASES    = "a[href*='/user/purchases']"
+    _NAV_PURCHASES    = "a[href$='/user/purchases']"
     _NAV_BALANCE      = "a[href*='/user/balance']"
     _NAV_EVENTS       = "a[href*='/user/events']"
     # Logout: unique combination — data-slot=button, type=button, accent background.
