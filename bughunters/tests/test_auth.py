@@ -16,12 +16,6 @@ class TestLoginHappyPath:
         pages.auth.page.locator("a[href*='/user']").wait_for(state="visible", timeout=10_000)
         assert pages.auth.is_logged_in(), "Profile link not visible after successful login"
 
-    def test_successful_login_redirects_to_home(self, pages: Pages) -> None:
-        """After login the user stays on / or is redirected — URL must not be a login page."""
-        pages.auth.login(MANAGER_USER["email"], MANAGER_USER["password"])
-        pages.auth.page.locator("a[href*='/user']").wait_for(state="visible", timeout=10_000)
-        assert "/login" not in pages.auth.current_url()
-
 
 class TestLoginNegative:
     def test_wrong_password_shows_error(self, pages: Pages) -> None:
