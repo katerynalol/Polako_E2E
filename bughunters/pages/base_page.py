@@ -7,10 +7,13 @@ class BasePage:
     def __init__(self, page: Page) -> None:
         self.page = page
         self._timeout = TIMEOUTS["element"]
+        self._header_user_link = "a[href*='/user']"
+        self._header_login_btn = "button.ml-4"
 
     def navigate(self, url: str) -> None:
         self.page.goto(url, timeout=TIMEOUTS["navigation"])
 
+    @property
     def current_url(self) -> str:
         return self.page.url
 
@@ -42,24 +45,19 @@ class BasePage:
     # ── Header helpers ────────────────────────────────────────────────────
 
     def click_login_button(self) -> None:
-        # Unique class on the header login button — language-independent
-        self.page.locator("button.ml-4").first.click()
+        self.page.locator(self._header_login_btn).first.click()
 
     def click_profile_button(self) -> None:
-        # After login the header shows a link to /user with avatar initial + "Profile"
-        self.page.locator("a[href*='/user']").first.click()
+        self.page.locator(self._header_user_link).first.click()
 
     def is_logged_in(self, timeout: int = 10_000) -> bool:
         try:
-            # Profile link appears in header only when authenticated
-            self.page.locator("a[href*='/user']").first.wait_for(state="visible", timeout=timeout)
+            self.page.locator(self._header_user_link).first.wait_for(state="visible", timeout=timeout)
             return True
         except Exception:
             return False
 
     def logout(self) -> None:
-        # Sidebar logout button — data-slot="button" + unique position
-        self.page.locator("a[href*='/user']").first.click()
-        self.page.wait_for_timeout(1000)
-        # Logout button is the only button with group/button class that is NOT type=submit
-        self.page.locator("button[type='button'][class*='group/button']").last.click()
+        self.click_profile_button()
+        logout_btn = self.page.locator("button[type='button'][class*='group/button']")
+        logout_btn.click()
