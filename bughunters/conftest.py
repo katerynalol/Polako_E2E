@@ -1,4 +1,5 @@
 import json
+import os
 import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from bughunters.data.constants import MANAGER_USER, TIMEOUTS, URLS
@@ -13,7 +14,9 @@ _AUTH_COOKIE_DOMAIN = "stg.polakohedonist.club"
 @pytest.fixture(scope="session")
 def browser_instance():
     with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=False)
+        # headless=True in CI (env var CI is set by GitHub Actions), False locally
+        headless = os.environ.get("CI", "false").lower() == "true"
+        browser = pw.chromium.launch(headless=headless)
         yield browser
 
 
