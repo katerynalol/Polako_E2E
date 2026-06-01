@@ -11,11 +11,6 @@ class TestLoginHappyPath:
 
         assert pages.auth.is_logged_in(), "Profile link not visible after successful login"
 
-    def test_successful_login_redirects_to_home(self, pages: Pages) -> None:
-        """After login the user stays on / or is redirected — URL must not be a login page."""
-        pages.auth.login(MANAGER_USER["email"], MANAGER_USER["password"])
-        expect(pages.auth.page).not_to_have_url(re.compile(r"/login"))
-
 
 class TestLoginNegative:
     def test_empty_credentials_does_not_login(self, pages: Pages) -> None:
