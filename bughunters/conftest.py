@@ -4,6 +4,8 @@ import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from bughunters.data.constants import MANAGER_USER, TIMEOUTS, URLS
 from bughunters.pages import Pages
+from bughunters.pages.auth_page import AuthPage
+from bughunters.pages.personal_info_page import PersonalInfoPage
 
 API_LOGIN_URL = "https://stg.polakohedonist.club/api/auth/login"
 _AUTH_COOKIE_DOMAIN = "stg.polakohedonist.club"
@@ -100,20 +102,10 @@ def authenticated_page(browser_instance: Browser) -> Page:
 # ── UI-based auth (fallback) ──────────────────────────────────────────────────
 
 def _ui_login(page: Page) -> None:
-    """
-    Fallback: performs login via the header modal.
-    Use when API auth is unavailable or needs to be tested explicitly.
-    Language-independent: structural selectors only.
-    """
-    page.goto(URLS["home"], timeout=TIMEOUTS["navigation"])
-
-    login_btn = page.locator("button.ml-4")
-    login_btn.click()
-
-    page.locator("input[name='email']").fill(MANAGER_USER["email"])
-    page.locator("input[name='password']").fill(MANAGER_USER["password"])
-    page.locator("button[type='submit'].btn-accent").click()
-    page.locator("a[href*='/user']").first.wait_for(state="visible", timeout=TIMEOUTS["navigation"])
+    """Fallback: performs login via the header modal using POM."""
+    auth_page = AuthPage(page)
+    auth_page.login(MANAGER_USER["email"], MANAGER_USER["password"])
+    auth_page.profile_link.wait_for(state="visible", timeout=TIMEOUTS["navigation"])
 
 
 @pytest.fixture(scope="function")
@@ -138,11 +130,24 @@ def pages(page: Page) -> Pages:
 
 
 @pytest.fixture(scope="function")
-def auth_pages(authenticated_page: Page) -> Pages:
-    return Pages(authenticated_page)
+def auth_page(page: Page) -> AuthPage:
+    """Возвращает чистый объект страницы авторизации для неавторизованной зоны"""
+    return AuthPage(page)
 
 
 @pytest.fixture(scope="function")
-def auth_pages_ui(authenticated_page_ui: Page) -> Pages:
-    """Page-object facade backed by UI-authenticated page (fallback)."""
-    return Pages(authenticated_page_ui)
+def auth_page_authenticated(authenticated_page: Page) -> AuthPage:
+    """Возвращает страницу авторизации, привязанную к АВТОРИЗОВАННОМУ контексту (к той же вкладке)"""
+    return AuthPage(authenticated_page)
+
+
+@pytest.fixture(scope="function")
+def auth_page_ui(authenticated_page_ui: Page) -> AuthPage:
+    """Возвращает страницу авторизации для UI-авторизованного контекста"""
+    return AuthPage(authenticated_page_ui)
+
+
+@pytest.fixture(scope="function")
+def personal_info_page(authenticated_page: Page) -> PersonalInfoPage:
+    """Возвращает страницу личной информации, которая уже открыта после API-авторизации"""
+    return PersonalInfoPage(authenticated_page)
