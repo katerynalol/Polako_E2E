@@ -151,3 +151,9 @@ def auth_page_ui(authenticated_page_ui: Page) -> AuthPage:
 def personal_info_page(authenticated_page: Page) -> PersonalInfoPage:
     """Возвращает страницу личной информации, которая уже открыта после API-авторизации"""
     return PersonalInfoPage(authenticated_page)
+
+
+@pytest.fixture(scope="function")
+def auth_pages(authenticated_page: Page) -> Pages:
+    """Возвращает фасад всех страниц Pages, привязанный к АВТОРИЗОВАННОМУ контексту"""
+    return Pages(authenticated_page)

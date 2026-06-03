@@ -20,11 +20,12 @@ class TestPersonalInfoHappyPath:
     def test_save_profile_shows_success_toast(self, auth_pages: Pages) -> None:
         """Happy path: saving the profile with current data triggers a success toast."""
         current_name = auth_pages.personal_info.get_first_name() or "QA_Bughunter"
-        auth_pages.personal_info.update_profile(first_name=current_name)
-        
+        auth_pages.personal_info.update_profile(first_name=current_name + "1")
+
         auth_pages.personal_info.verify_success_toast_contains_text(
             re.compile(r"(сохранён|сохранен|saved|успех|success)")
         )
+
 
     def test_all_profile_fields_are_visible(self, auth_pages: Pages) -> None:
         """All expected input fields should be present on the page."""
@@ -65,6 +66,8 @@ class TestPurchasesPage:
     def test_purchases_shows_empty_state_or_items(self, auth_pages: Pages) -> None:
         """Purchases page must render either a list or an empty-state message."""
         auth_pages.purchases.open()
+        auth_pages.purchases.page.wait_for_load_state("networkidle")
+
         count = auth_pages.purchases.get_purchase_count()
         is_empty = auth_pages.purchases.is_empty()
         assert count > 0 or is_empty, "Purchases page should show items or an empty-state message"

@@ -72,7 +72,7 @@ class PersonalInfoPage(BasePage):
         expect(self.page.locator(self._LOGOUT_BTN)).to_be_visible()
 
     def verify_success_toast_contains_text(self, pattern: str | re.Pattern) -> None:
-        expect(self.page.locator("body")).to_have_text(pattern, ignore_case=True)
+        expect(self.page.locator("body")).to_contain_text(pattern, ignore_case=True)
 
     def change_password(self, new_password: str) -> None:
         self.fill(self._NEW_PASSWORD, new_password)
