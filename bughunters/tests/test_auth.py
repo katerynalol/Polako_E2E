@@ -6,14 +6,14 @@ from bughunters.pages.personal_info_page import PersonalInfoPage
 
 
 class TestLoginHappyPath:
-    def test_successful_login_shows_profile_link(self, pages: Pages) -> None:
+    def test_successful_login_shows_profile_link(self, auth_page: AuthPage) -> None:
         """Happy path: valid credentials → profile link appears in header."""
         pages.auth.login(MANAGER_USER["email"], MANAGER_USER["password"])
         assert pages.auth.is_logged_in(), "Profile link not visible after successful login"
 
 
 class TestLoginNegative:
-    def test_empty_credentials_does_not_login(self, pages: Pages) -> None:
+    def test_empty_credentials_does_not_login(self, auth_page: AuthPage) -> None:
         """Submitting empty form should not authenticate the user."""
         pages.auth.open()
         pages.auth.open_login_modal()
@@ -24,7 +24,7 @@ class TestLoginNegative:
 
 
 class TestLogout:
-    def test_logout_removes_profile_link(self, auth_pages_ui: Pages) -> None:
+    def test_logout_removes_profile_link(self, auth_pages_ui: AuthPage) -> None:
         """After logout the profile link must disappear from the header."""
         assert auth_pages_ui.auth.is_logged_in(), "Must be logged in before testing logout"
 
