@@ -25,6 +25,7 @@ class TestPersonalInfoHappyPath:
         auth_pages.personal_info.update_profile(first_name=current_name)
         auth_pages.personal_info.verify_save_succeeded()
 
+
     def test_all_profile_fields_are_visible(self, auth_pages: Pages) -> None:
         """All expected input fields should be present on the page."""
         auth_pages.personal_info.verify_profile_fields_visible()

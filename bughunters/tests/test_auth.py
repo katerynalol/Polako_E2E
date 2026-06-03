@@ -1,7 +1,8 @@
-import re
 from playwright.sync_api import expect
-from bughunters.pages import Pages
+
 from bughunters.data.constants import MANAGER_USER
+from bughunters.pages.auth_page import AuthPage
+from bughunters.pages.personal_info_page import PersonalInfoPage
 
 
 class TestLoginHappyPath:

@@ -12,6 +12,8 @@ class AuthPage(BasePage):
     _SUBMIT   = "button[type='submit'].btn-accent"
     _ERROR    = "[role='alert'], [class*='error'], [class*='Error']"
 
+    _PROFILE_LINK = "header a[href*='/user']"
+
     # ── Registration flow ─────────────────────────────────────────────────
     _REGISTER_LINK   = "button.underline"
     _REG_FOR_USER    = "button.btn-accent:nth-of-type(1)"
@@ -25,6 +27,11 @@ class AuthPage(BasePage):
     def __init__(self, page: Page) -> None:
         super().__init__(page)
 
+    @property
+    def profile_link(self):
+        """Возвращает локатор ссылки профиля в шапке сайта для ассертов expect()."""
+        return self.page.locator(self._PROFILE_LINK)
+
     def open(self) -> None:
         self.navigate(URLS["home"])
 
@@ -32,12 +39,22 @@ class AuthPage(BasePage):
         self.click_login_button()
         self.wait_visible(self._EMAIL)
 
+    def fill_login_form(self, email: str, password: str) -> None:
+        """Заполняет форму, но не отправляет её (полезно для негативных тестов)."""
+        self.fill(self._EMAIL, email)
+        self.fill(self._PASSWORD, password)
+
+    def submit_login(self, force: bool = False) -> None:
+        if force:
+            self.page.locator(self._SUBMIT).click(force=True)
+        else:
+            self.click(self._SUBMIT)
+
     def login(self, email: str, password: str) -> None:
         self.open()
         self.open_login_modal()
-        self.fill(self._EMAIL, email)
-        self.fill(self._PASSWORD, password)
-        self.click(self._SUBMIT)
+        self.fill_login_form(email, password)
+        self.submit_login()
 
     def get_error_message(self) -> str:
         loc = self.page.locator(self._ERROR)

@@ -4,6 +4,8 @@ import pytest
 from playwright.sync_api import Browser, BrowserContext, Page, sync_playwright
 from bughunters.data.constants import MANAGER_USER, TIMEOUTS, URLS
 from bughunters.pages import Pages
+from bughunters.pages.auth_page import AuthPage
+from bughunters.pages.personal_info_page import PersonalInfoPage
 
 API_LOGIN_URL = "https://stg.polakohedonist.club/api/auth/login"
 
