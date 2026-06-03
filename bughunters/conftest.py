@@ -8,7 +8,27 @@ from bughunters.pages.auth_page import AuthPage
 from bughunters.pages.personal_info_page import PersonalInfoPage
 
 API_LOGIN_URL = "https://stg.polakohedonist.club/api/auth/login"
-_AUTH_COOKIE_DOMAIN = "stg.polakohedonist.club"
+
+# "What's new" modal selectors — used in conftest before page objects are available
+_MODAL_OVERLAY   = "div.fixed.inset-0.z-50"
+_MODAL_CLOSE_BTN = "div[role='dialog'] button[type='button'][class*='border-gray-200']"
+
+
+def _dismiss_modal(page: Page, timeout: int = 3_000) -> None:
+    """Dismiss the announcement modal if visible. Safe to call at any time."""
+    try:
+        page.locator(_MODAL_OVERLAY).wait_for(state="visible", timeout=timeout)
+    except Exception:
+        return
+    try:
+        page.locator(_MODAL_CLOSE_BTN).click(timeout=2_000)
+        page.locator(_MODAL_OVERLAY).wait_for(state="hidden", timeout=5_000)
+    except Exception:
+        page.keyboard.press("Escape")
+        try:
+            page.locator(_MODAL_OVERLAY).wait_for(state="hidden", timeout=3_000)
+        except Exception:
+            pass
 
 
 # ── Browser (session-scoped) ──────────────────────────────────────────────────
@@ -16,7 +36,6 @@ _AUTH_COOKIE_DOMAIN = "stg.polakohedonist.club"
 @pytest.fixture(scope="session")
 def browser_instance():
     with sync_playwright() as pw:
-        # headless=True in CI (env var CI is set by GitHub Actions), False locally
         headless = os.environ.get("CI", "false").lower() == "true"
         browser = pw.chromium.launch(headless=headless)
         yield browser
@@ -39,86 +58,92 @@ def page(context: BrowserContext) -> Page:
     p.close()
 
 
-# ── API-based auth (primary) ──────────────────────────────────────────────────
+# ── UI-based auth (primary) ───────────────────────────────────────────────────
+#
+# UI login is the only approach that fully initialises the Next.js session
+# (sets access_token, content_helper_token, pha_refresh cookies + localStorage).
+# API-only cookie injection breaks CSR navigation between authenticated pages.
 
-def _api_login(browser: Browser) -> Page:
+def _ui_login(page: Page) -> None:
     """
-    Authenticates via POST /api/auth/login, injects the access_token cookie
-    on the correct domain, and navigates directly to the personal-information page.
-
-    The client app (stg-client.polakohedonist.club) does a 301 → stg.polakohedonist.club,
-    so the cookie must be set on stg.polakohedonist.club.
-    No UI interaction needed — language-independent.
+    Login via the header modal, then navigate to personal-information.
+    Language-independent: structural selectors only.
     """
-    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
-    ctx.set_default_timeout(TIMEOUTS["default"])
-    page = ctx.new_page()
-
-    # 1. Call the API to get a fresh access token
-    resp = page.request.post(
-        API_LOGIN_URL,
-        data=json.dumps({
-            "email": MANAGER_USER["email"],
-            "password": MANAGER_USER["password"],
-        }),
-        headers={"Content-Type": "application/json"},
+    page.goto(URLS["home"], timeout=TIMEOUTS["navigation"])
+    page.locator("button.ml-4").click()
+    page.locator("input[name='email']").fill(MANAGER_USER["email"])
+    page.locator("input[name='password']").fill(MANAGER_USER["password"])
+    page.locator("button[type='submit'].btn-accent").click()
+    page.locator("a[href*='/user']").first.wait_for(
+        state="visible", timeout=TIMEOUTS["navigation"]
     )
-    assert resp.ok, f"API login failed: {resp.status} {resp.text()}"
-    body = resp.json()
-    access_token = body["data"]["access_token"]
-
-    # 2. Inject access_token cookie on the API/app domain
-    ctx.add_cookies([
-        {
-            "name": "access_token",
-            "value": access_token,
-            "domain": _AUTH_COOKIE_DOMAIN,
-            "path": "/",
-            "httpOnly": False,
-            "secure": True,
-            "sameSite": "Lax",
-        }
-    ])
-
-    # 3. Navigate directly to personal-information — the app reads the cookie server-side
+    # Go straight to the page under test and dismiss the announcement modal
     page.goto(URLS["personal_info"], timeout=TIMEOUTS["navigation"])
-    # Confirm we landed on the right page (not redirected to login)
-    page.locator("input[name='first_name']").wait_for(state="visible", timeout=TIMEOUTS["element"])
-
-    return page, ctx
+    _dismiss_modal(page)
 
 
 @pytest.fixture(scope="function")
 def authenticated_page(browser_instance: Browser) -> Page:
     """
-    Primary fixture: API login → cookie injection → navigate to personal-info.
-    One login per test, no UI modal interaction.
-    """
-    page, ctx = _api_login(browser_instance)
-    yield page
-    ctx.close()
-
-
-# ── UI-based auth (fallback) ──────────────────────────────────────────────────
-
-def _ui_login(page: Page) -> None:
-    """Fallback: performs login via the header modal using POM."""
-    auth_page = AuthPage(page)
-    auth_page.login(MANAGER_USER["email"], MANAGER_USER["password"])
-    auth_page.profile_link.wait_for(state="visible", timeout=TIMEOUTS["navigation"])
-
-
-@pytest.fixture(scope="function")
-def authenticated_page_ui(browser_instance: Browser) -> Page:
-    """
-    Fallback fixture: UI login via header modal.
-    Slower than authenticated_page but tests the full login flow.
+    Primary fixture: UI login → personal-information page, modal dismissed.
+    Each test gets a fresh authenticated context.
     """
     ctx = browser_instance.new_context(viewport={"width": 1280, "height": 800})
     ctx.set_default_timeout(TIMEOUTS["default"])
     p = ctx.new_page()
     _ui_login(p)
     yield p
+    ctx.close()
+
+
+# ── API-based auth (fallback / for auth tests only) ───────────────────────────
+#
+# Suitable only for tests that stay on personal-information without navigating away.
+# Does NOT support CSR navigation to other /user/* pages.
+
+def _api_login(browser: Browser):
+    ctx = browser.new_context(viewport={"width": 1280, "height": 800})
+    ctx.set_default_timeout(TIMEOUTS["default"])
+    page = ctx.new_page()
+
+    resp = page.request.post(
+        API_LOGIN_URL,
+        data=json.dumps({
+            "email":    MANAGER_USER["email"],
+            "password": MANAGER_USER["password"],
+        }),
+        headers={"Content-Type": "application/json"},
+    )
+    assert resp.ok, f"API login failed: {resp.status} {resp.text()}"
+    access_token = resp.json()["data"]["access_token"]
+
+    # Visit stg.* first so the cookie domain is registered in the browser context
+    page.goto(URLS["personal_info"], timeout=TIMEOUTS["navigation"])
+    ctx.add_cookies([{
+        "name":     "access_token",
+        "value":    access_token,
+        "domain":   "stg.polakohedonist.club",
+        "path":     "/",
+        "httpOnly": False,
+        "secure":   True,
+        "sameSite": "Lax",
+    }])
+    page.reload(timeout=TIMEOUTS["navigation"])
+    page.locator("input[name='first_name']").wait_for(
+        state="visible", timeout=TIMEOUTS["element"]
+    )
+    _dismiss_modal(page)
+    return page, ctx
+
+
+@pytest.fixture(scope="function")
+def authenticated_page_api(browser_instance: Browser) -> Page:
+    """
+    Fallback fixture: API login via cookie injection.
+    Use only for tests on personal-information that do NOT navigate away.
+    """
+    page, ctx = _api_login(browser_instance)
+    yield page
     ctx.close()
 
 
@@ -130,30 +155,18 @@ def pages(page: Page) -> Pages:
 
 
 @pytest.fixture(scope="function")
-def auth_page(page: Page) -> AuthPage:
-    """Возвращает чистый объект страницы авторизации для неавторизованной зоны"""
-    return AuthPage(page)
-
-
-@pytest.fixture(scope="function")
-def auth_page_authenticated(authenticated_page: Page) -> AuthPage:
-    """Возвращает страницу авторизации, привязанную к АВТОРИЗОВАННОМУ контексту (к той же вкладке)"""
-    return AuthPage(authenticated_page)
-
-
-@pytest.fixture(scope="function")
-def auth_page_ui(authenticated_page_ui: Page) -> AuthPage:
-    """Возвращает страницу авторизации для UI-авторизованного контекста"""
-    return AuthPage(authenticated_page_ui)
-
-
-@pytest.fixture(scope="function")
-def personal_info_page(authenticated_page: Page) -> PersonalInfoPage:
-    """Возвращает страницу личной информации, которая уже открыта после API-авторизации"""
-    return PersonalInfoPage(authenticated_page)
-
-
-@pytest.fixture(scope="function")
 def auth_pages(authenticated_page: Page) -> Pages:
-    """Возвращает фасад всех страниц Pages, привязанный к АВТОРИЗОВАННОМУ контексту"""
+    """UI-authenticated pages facade — supports full navigation."""
     return Pages(authenticated_page)
+
+
+@pytest.fixture(scope="function")
+def auth_pages_ui(authenticated_page: Page) -> Pages:
+    """Alias for auth_pages — kept for backward compatibility."""
+    return Pages(authenticated_page)
+
+
+@pytest.fixture(scope="function")
+def auth_pages_api(authenticated_page_api: Page) -> Pages:
+    """API-authenticated pages facade — personal-info only."""
+    return Pages(authenticated_page_api)

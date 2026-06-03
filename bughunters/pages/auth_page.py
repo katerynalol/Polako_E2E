@@ -6,32 +6,22 @@ from bughunters.data.constants import URLS, TIMEOUTS
 
 class AuthPage(BasePage):
     # ── Login modal ───────────────────────────────────────────────────────
-    # Header "Login" button — unique class ml-4 in header, language-independent
     _LOGIN_HEADER_BTN = "button.ml-4"
-
     _EMAIL    = "input[name='email']"
     _PASSWORD = "input[name='password']"
-
-    # Only submit button with btn-accent class inside the login modal
     _SUBMIT   = "button[type='submit'].btn-accent"
-
-    # Error: look for any visible alert or element with error-related class
     _ERROR    = "[role='alert'], [class*='error'], [class*='Error']"
 
     _PROFILE_LINK = "header a[href*='/user']"
 
     # ── Registration flow ─────────────────────────────────────────────────
-    # "Don't have an account?" — unique class, no text dependency needed
     _REGISTER_LINK   = "button.underline"
-
-    # Role-selection buttons: positional — first = user, second = manager
-    # Both have class "btn-accent" inside the registration modal
     _REG_FOR_USER    = "button.btn-accent:nth-of-type(1)"
     _REG_FOR_MANAGER = "button.btn-accent:nth-of-type(2)"
 
     # ── Registration form ─────────────────────────────────────────────────
     _FIRST_NAME = "input[name='firstName'], input[name='first_name']"
-    _LAST_NAME  = "input[name='lastName'], input[name='last_name']"
+    _LAST_NAME  = "input[name='lastName'],  input[name='last_name']"
     _REG_SUBMIT = "button[type='submit'].btn-accent"
 
     def __init__(self, page: Page) -> None:
@@ -82,7 +72,9 @@ class AuthPage(BasePage):
         self.click(self._REGISTER_LINK)
         self.page.locator("button.btn-accent").nth(1).click()
 
-    def register_user(self, first_name: str, last_name: str, email: str, password: str) -> None:
+    def register_user(
+        self, first_name: str, last_name: str, email: str, password: str
+    ) -> None:
         self.open_register_user()
         self.fill(self._FIRST_NAME, first_name)
         self.fill(self._LAST_NAME, last_name)

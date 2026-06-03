@@ -4,18 +4,20 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-BASE_URL = "https://stg-client.polakohedonist.club"
+BASE_URL        = "https://stg-client.polakohedonist.club"
+BASE_URL_AUTH   = "https://stg.polakohedonist.club"   # cookie domain after login redirect
 LANG = "ru"
 
 URLS = {
     "home":           f"{BASE_URL}/{LANG}",
     "login":          f"{BASE_URL}/{LANG}",
-    "personal_info":  f"{BASE_URL}/{LANG}/user/personal-information",
-    "purchases":      f"{BASE_URL}/{LANG}/user/purchases",
-    "events":         f"{BASE_URL}/{LANG}/events",
-    "events_create":  f"{BASE_URL}/{LANG}/user/events/create",
-    "events_list":    f"{BASE_URL}/{LANG}/user/events",
-    "reports":        f"{BASE_URL}/{LANG}/user/reports",
+    # Authenticated pages — use the post-redirect domain so the session cookie is sent
+    "personal_info":  f"{BASE_URL_AUTH}/{LANG}/user/personal-information",
+    "purchases":      f"{BASE_URL_AUTH}/{LANG}/user/purchases",
+    "events":         f"{BASE_URL_AUTH}/{LANG}/events",
+    "events_create":  f"{BASE_URL_AUTH}/{LANG}/user/events/create",
+    "events_list":    f"{BASE_URL_AUTH}/{LANG}/user/events",
+    "reports":        f"{BASE_URL_AUTH}/{LANG}/user/reports",
 }
 
 TIMEOUTS = {
