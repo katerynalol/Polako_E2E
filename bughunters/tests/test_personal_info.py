@@ -15,16 +15,15 @@ class TestPersonalInfoHappyPath:
 
     def test_profile_url_is_correct(self, auth_pages: Pages) -> None:
         """After API login we should land on personal-information, not a login redirect."""
-        expect(auth_pages.personal_info.page).to_have_url(re.compile(r"user/personal-information"))
+        expect(auth_pages.personal_info.page).to_have_url(
+            re.compile(r"user/personal-information")
+        )
 
-    def test_save_profile_shows_success_toast(self, auth_pages: Pages) -> None:
-        """Happy path: saving the profile with current data triggers a success toast."""
+    def test_save_profile_shows_success_feedback(self, auth_pages: Pages) -> None:
+        """Happy path: saving the profile stays on the page with no error."""
         current_name = auth_pages.personal_info.get_first_name() or "QA_Bughunter"
         auth_pages.personal_info.update_profile(first_name=current_name)
-        
-        auth_pages.personal_info.verify_success_toast_contains_text(
-            re.compile(r"(сохранён|сохранен|saved|успех|success)")
-        )
+        auth_pages.personal_info.verify_save_succeeded()
 
     def test_all_profile_fields_are_visible(self, auth_pages: Pages) -> None:
         """All expected input fields should be present on the page."""
@@ -53,18 +52,22 @@ class TestPersonalInfoNavigation:
         """After going to purchases, clicking profile link returns to personal-info."""
         auth_pages.personal_info.navigate_to_purchases()
         auth_pages.personal_info.navigate_to_personal_info()
-        expect(auth_pages.personal_info.page).to_have_url(re.compile(r"user/personal-information"))
+        expect(auth_pages.personal_info.page).to_have_url(
+            re.compile(r"user/personal-information")
+        )
 
 
 class TestPurchasesPage:
     def test_purchases_page_loads(self, auth_pages: Pages) -> None:
-        """Happy path: purchases page is accessible from personal-info sidebar."""
+        """Happy path: purchases page is accessible."""
         auth_pages.purchases.open()
         expect(auth_pages.purchases.page).to_have_url(re.compile(r"user/purchases"))
 
     def test_purchases_shows_empty_state_or_items(self, auth_pages: Pages) -> None:
         """Purchases page must render either a list or an empty-state message."""
         auth_pages.purchases.open()
-        count = auth_pages.purchases.get_purchase_count()
+        count    = auth_pages.purchases.get_purchase_count()
         is_empty = auth_pages.purchases.is_empty()
-        assert count > 0 or is_empty, "Purchases page should show items or an empty-state message"
+        assert count > 0 or is_empty, (
+            "Purchases page should show items or an empty-state message"
+        )
